@@ -1,28 +1,27 @@
 FROM php:8.2-cli
 
+# Install dependency & ekstensi PHP yang dibutuhkan Laravel & MySQL
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
-    libpq-dev \
     libzip-dev \
-    && docker-php-ext-install pdo_pgsql zip \
-    && rm -rf /var/lib/apt/lists/*
+    libpng-dev \
+    && docker-php-ext-install pdo pdo_mysql zip
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-WORKDIR /var/www/html
+# Set working directory
+WORKDIR /app
 
+# Copy seluruh file project
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Install paket laravel (composer)
+RUN composer install --no-dev --optimize-autoloader
 
-RUN mkdir -p \
-    storage/framework/cache \
-    storage/framework/sessions \
-    storage/framework/views \
-    bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+# Set permission storage
+RUN chmod -R 777 storage bootstrap/cache
 
-EXPOSE 10000
-
-CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
+# Jalankan server Laravel
+CMD php artisan serve --host=0.0.0.0 --port=$PORT
